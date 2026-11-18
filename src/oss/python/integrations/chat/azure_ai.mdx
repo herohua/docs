@@ -36,11 +36,11 @@ Microsoft Foundry provides project-level access to models and Azure services. Us
 
 ## Setup
 
-To access `AzureAIOpenAIApiChatModel` models, you'll need to create an [Azure account](https://azure.microsoft.com/pricing/purchase-options/azure-account), get an API key, and install the `langchain-azure-ai` integration package.
+To access `AzureAIOpenAIApiChatModel` models, create an [Azure account](https://azure.microsoft.com/pricing/purchase-options/azure-account), deploy a model, and install the `langchain-azure-ai` integration package. Microsoft Entra ID authentication with `DefaultAzureCredential` is the recommended authentication method.
 
 ### Credentials
 
-Head to the [Azure docs](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/develop/sdk-overview?tabs=sync&pivots=programming-language-python) to see how to create your deployment and generate an API key. Once your model is deployed, you click the 'get endpoint' button in AI Foundry. This will show you your endpoint and api key. Once you've done this, set the environment variables:
+Follow the [Microsoft Foundry documentation](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/develop/sdk-overview?tabs=sync&pivots=programming-language-python) to create a project and deploy a model. For local development with Microsoft Entra ID, run `az login`, then set your project endpoint:
 
 <Tabs>
     <Tab title="Shell">
@@ -84,35 +84,49 @@ The LangChain `AzureAIOpenAIApiChatModel` integration lives in the `langchain-az
 
 ## Instantiation
 
-Now we can instantiate our model object and generate chat completions:
+Use the Responses API with Microsoft Entra ID for new applications. The alternatives show how to use Chat Completions with either Microsoft Entra ID or an API key.
 
 <Tabs>
-    <Tab title="Project quickstart">
+    <Tab title="Responses API (recommended)">
         ```python
         from azure.identity import DefaultAzureCredential
         from langchain_azure_ai.chat_models import AzureAIOpenAIApiChatModel
 
         llm = AzureAIOpenAIApiChatModel(
-            model="gpt-6.1-sol",  # your Foundry model deployment name
+            model="your-model-deployment",
             credential=DefaultAzureCredential(),
+            use_responses_api=True,
+            store=False,
         )
         ```
     </Tab>
-    <Tab title="Model parameters">
+    <Tab title="Chat Completions with Entra ID">
         ```python
-        from langchain_azure_ai.chat_models import AzureAIOpenAIApiChatModel
         from azure.identity import DefaultAzureCredential
+        from langchain_azure_ai.chat_models import AzureAIOpenAIApiChatModel
 
         llm = AzureAIOpenAIApiChatModel(
-            model="gpt-4o",
+            model="your-model-deployment",
             credential=DefaultAzureCredential(),
-            temperature=0,
-            max_tokens=None,
-            max_retries=2,
+            use_responses_api=False,
+        )
+        ```
+    </Tab>
+    <Tab title="Chat Completions with API key">
+        ```python
+        from langchain_azure_ai.chat_models import AzureAIOpenAIApiChatModel
+
+        llm = AzureAIOpenAIApiChatModel(
+            endpoint="https://<resource>.services.ai.azure.com/openai/v1",
+            model="your-model-deployment",
+            credential="your-api-key",
+            use_responses_api=False,
         )
         ```
     </Tab>
 </Tabs>
+
+LangGraph agents keep conversation history in graph state, so use `store=False` to disable model-side response storage. For direct Responses API calls, pass prior messages to manage history in your application, or use `store=True` with `previous_response_id` to continue a conversation from model-side storage.
 
 ## Invocation
 
